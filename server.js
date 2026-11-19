@@ -46,7 +46,7 @@ app.post("/api/report", async (req, res) => {
     accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
     apiVersion: process.env.WHATSAPP_API_VERSION,
-    recipient: process.env.WHATSAPP_TO || DEFAULT_WHATSAPP_RECIPIENT,
+    recipient: DEFAULT_WHATSAPP_RECIPIENT,
     templateName: process.env.WHATSAPP_TEMPLATE_NAME,
     templateLanguage: process.env.WHATSAPP_TEMPLATE_LANGUAGE
   };
