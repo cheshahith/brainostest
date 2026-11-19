@@ -56,6 +56,8 @@ input::placeholder{color:var(--muted)}
 input:focus{outline:0;border-color:var(--gold);box-shadow:0 0 12px rgba(201,168,76,.2)}
 .err{color:var(--gold2);font-size:12px;margin-top:6px;min-height:16px}
 .fine{font-size:12px;color:var(--muted);margin-top:14px;text-align:center}
+.consent{display:flex;align-items:flex-start;gap:10px;text-transform:none;letter-spacing:0;font-size:12px;line-height:1.6;color:var(--dust)}
+.consent input{width:18px;height:18px;flex:none;margin:2px 0 0;accent-color:var(--gold)}
 /* results */
 .ring{width:170px;height:170px;margin:0 auto 6px;position:relative}
 .ring svg{transform:rotate(-90deg)}
@@ -115,6 +117,8 @@ hr{border:0;height:1px;background:var(--muted);opacity:.4;margin:34px 0}
       <label for="ph">Mobile number</label>
       <input id="ph" type="tel" autocomplete="tel" placeholder="Your mobile number">
       <div class="err" id="e-ph"></div>
+      <label class="consent"><input id="consent" type="checkbox"><span>I agree to send my name and assessment summary as a PDF to THE BRAIN.OS™ INSTITUTE via WhatsApp at +91 8637619427. My individual answers will not be sent.</span></label>
+      <div class="err" id="e-consent" role="status"></div>
       <button class="btn block mt" type="submit">See my results</button>
     </form>
     <p class="fine">Your details stay with THE BRAIN.OS™ INSTITUTE.</p>
@@ -130,6 +134,8 @@ hr{border:0;height:1px;background:var(--muted);opacity:.4;margin:34px 0}
       <p class="mt" id="blurb"></p>
     </div>
     <div class="rows" id="rows"></div>
+    <p class="fine" id="delivery" role="status" aria-live="polite"></p>
+    <div class="center"><button class="ghost" id="retry-delivery" type="button" hidden>Retry report delivery</button></div>
     <div class="box"><div class="l" id="topl"></div><div class="v" id="refl"></div></div>
     <hr>
     <div class="cta center">
@@ -147,7 +153,8 @@ hr{border:0;height:1px;background:var(--muted);opacity:.4;margin:34px 0}
 /* ====== SETTINGS: edit these two lines ====== */
 var CONFIG={
   WHATSAPP:"919840830291",   // CTA button opens WhatsApp with this number
-  LEAD_ENDPOINT:""           // paste a Google Apps Script or Formspree URL to collect leads
+  LEAD_ENDPOINT:"",          // optional lead collection endpoint
+  REPORT_ENDPOINT:"/api/report"
 };
 /* =========================================== */
 var DIMS=[
@@ -181,7 +188,7 @@ var CATS=[
  {max:100,t:"PRIORITY FOR EXPLORATION",b:"Several recurring patterns may be creating friction between your current behaviour and the outcomes you want. Your opportunity: explore these patterns more deeply and develop practical strategies for change."}
 ];
 var $=function(i){return document.getElementById(i)};
-var i=0,ans=[],user={};
+var i=0,ans=[],user={},pendingReport=null;
 
 function show(id){
   document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("on")});
@@ -219,6 +226,8 @@ $("form").onsubmit=function(e){
   $("e-em").textContent=emOk?"":"Enter a valid email address.";if(!emOk)ok=false;
   var phOk=ph.replace(/\D/g,"").length>=8;
   $("e-ph").textContent=phOk?"":"Enter a valid mobile number.";if(!phOk)ok=false;
+  var consentOk=$("consent").checked;
+  $("e-consent").textContent=consentOk?"":"Please agree before your report is sent.";if(!consentOk)ok=false;
   if(!ok)return;
   user={name:fn,email:em,phone:ph};
   results();
@@ -244,6 +253,10 @@ function results(){
   $("refl").textContent=DIMS[topIdx].r;
   var msg="Hi, I’m "+user.name+". I just completed the Invisible Inner Ceiling Test (score "+pct+"%) and I’m ready to join the BRAIN RESET™ 5-DAY CHALLENGE.";
   $("cta").href="https://wa.me/"+CONFIG.WHATSAPP+"?text="+encodeURIComponent(msg);
+  var report={consent:true,name:user.name,overall:pct,dimensions:{}};
+  DIMS.forEach(function(m,k){report.dimensions[m.n]=dp[k]});
+  pendingReport=report;
+  sendReport(report);
   show("s-res");
 
   setTimeout(function(){
@@ -252,13 +265,24 @@ function results(){
     rows.querySelectorAll("i").forEach(function(b,k){b.style.width=dp[k]+"%"});
   },350);
 
-  var payload={name:user.name,email:user.email,phone:user.phone,overall:pct,dimensions:{},answers:ans,highest:DIMS[topIdx].n,submitted:new Date().toISOString()};
+  var payload={name:user.name,email:user.email,phone:user.phone,overall:pct,dimensions:{},highest:DIMS[topIdx].n,submitted:new Date().toISOString()};
   DIMS.forEach(function(m,k){payload.dimensions[m.n]=dp[k]});
   try{var all=JSON.parse(localStorage.getItem("brainos_leads")||"[]");all.push(payload);localStorage.setItem("brainos_leads",JSON.stringify(all))}catch(x){}
   if(CONFIG.LEAD_ENDPOINT){
     fetch(CONFIG.LEAD_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify(payload)}).catch(function(){});
   }
 }
+
+function sendReport(report){
+  $("delivery").textContent="Sending your PDF report to WhatsApp…";
+  $("retry-delivery").hidden=true;
+  fetch(CONFIG.REPORT_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(report)})
+    .then(function(response){return response.json().then(function(data){if(!response.ok)throw new Error(data.error||"Report delivery failed.");return data})})
+    .then(function(){$("delivery").textContent="Your PDF report was sent to WhatsApp at +91 8637619427."})
+    .catch(function(){$("delivery").textContent="We could not send your PDF report. Please try again later.";$("retry-delivery").hidden=false});
+}
+
+$("retry-delivery").onclick=function(){if(pendingReport)sendReport(pendingReport)};
 
 $("share").onclick=function(){
   var url=location.href.split("#")[0],txt="Take THE BRAIN.OS™ Invisible Inner Ceiling Test";
