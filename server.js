@@ -6,6 +6,7 @@ const PDFDocument = require("pdfkit");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+const DEFAULT_WHATSAPP_RECIPIENT = "919342299707";
 const LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const LIMIT_PER_IP = 5;
 const requestsByIp = new Map();
@@ -45,7 +46,7 @@ app.post("/api/report", async (req, res) => {
     accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
     apiVersion: process.env.WHATSAPP_API_VERSION,
-    recipient: process.env.WHATSAPP_TO,
+    recipient: process.env.WHATSAPP_TO || DEFAULT_WHATSAPP_RECIPIENT,
     templateName: process.env.WHATSAPP_TEMPLATE_NAME,
     templateLanguage: process.env.WHATSAPP_TEMPLATE_LANGUAGE
   };
