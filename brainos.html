@@ -117,7 +117,7 @@ hr{border:0;height:1px;background:var(--muted);opacity:.4;margin:34px 0}
       <label for="ph">Mobile number</label>
       <input id="ph" type="tel" autocomplete="tel" placeholder="Your mobile number">
       <div class="err" id="e-ph"></div>
-      <label class="consent"><input id="consent" type="checkbox"><span>I agree to send my name and assessment summary as a PDF to THE BRAIN.OS™ INSTITUTE via WhatsApp at +91 8637619427. My individual answers will not be sent.</span></label>
+      <label class="consent"><input id="consent" type="checkbox"><span>I agree to send my name and assessment summary as a PDF to THE BRAIN.OS™ INSTITUTE via WhatsApp at +91 9342299707. My individual answers will not be sent.</span></label>
       <div class="err" id="e-consent" role="status"></div>
       <button class="btn block mt" type="submit">See my results</button>
     </form>
@@ -278,7 +278,7 @@ function sendReport(report){
   $("retry-delivery").hidden=true;
   fetch(CONFIG.REPORT_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(report)})
     .then(function(response){return response.json().then(function(data){if(!response.ok)throw new Error(data.error||"Report delivery failed.");return data})})
-    .then(function(){$("delivery").textContent="Your PDF report was sent to WhatsApp at +91 8637619427."})
+    .then(function(){$("delivery").textContent="Your PDF report was sent to WhatsApp at +91 9342299707."})
     .catch(function(){$("delivery").textContent="We could not send your PDF report. Please try again later.";$("retry-delivery").hidden=false});
 }
 
